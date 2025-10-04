@@ -1,14 +1,10 @@
-winrt-runtime==3.2.1
-winrt-Windows.Foundation==3.2.1
-winrt-Windows.Foundation.Collections==3.2.1
-winrt-Windows.Graphics.Capture==3.2.1
-winrt-Windows.Graphics.Capture.Interop==3.2.1
-winrt-Windows.Graphics.DirectX==3.2.1
-winrt-Windows.Graphics.DirectX.Direct3D11.Interop==3.2.1
-winrt-Windows.Graphics.Imaging==3.2.1
-winrt-Windows.Storage==3.2.1
-winrt-Windows.UI.Composition==3.2.1
-winrt-Windows.UI.WindowManagement==3.2.1
+dxcam
+cv2
+pywin32
+Pillow
+pyautogui
+PyQt6
+pydirectinput
 
 paddleocr==3.2.0
 paddlepaddle-gpu==3.2.0
