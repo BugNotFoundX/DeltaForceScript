@@ -4,7 +4,8 @@
 # @Description: PyQt6 GUI 监控窗口
 
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                             QLabel, QPushButton, QGroupBox, QTextEdit, QProgressBar)
+                             QLabel, QPushButton, QGroupBox, QTextEdit, QProgressBar,
+                             QSpinBox, QDoubleSpinBox, QCheckBox)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject
 from PyQt6.QtGui import QFont, QPalette, QColor
 import sys
@@ -34,6 +35,15 @@ class MonitorWindow(QMainWindow):
         self.confidence = 0.0
         self.click_count = 0
         self.status = "就绪"
+        
+        # 配置变量
+        self.buy_click_delay = 0.6  # 购买点击延迟（秒）
+        self.buy_to_verify_delay = 0.0  # 购买到确认的延迟（秒）
+        self.buy_clicks = 1  # 购买按钮点击次数
+        self.verify_clicks = 2  # 确认按钮点击次数
+        self.verify_interval = 0.08  # 确认按钮点击间隔（秒）
+        self.ocr_interval = 0.05  # OCR识别间隔（秒）
+        self.continue_after_complete = False  # 任务完成后继续运行
         
         self.init_ui()
         
@@ -114,9 +124,9 @@ class MonitorWindow(QMainWindow):
         
         main_layout.addWidget(timer_group)
         
-        # ========== OCR信息组 ==========
-        ocr_group = QGroupBox("OCR 识别信息")
-        ocr_group.setStyleSheet("""
+        # ========== 脚本配置组 ==========
+        config_group = QGroupBox("⚙️ 脚本配置")
+        config_group.setStyleSheet("""
             QGroupBox {
                 font-size: 14px;
                 font-weight: bold;
@@ -126,61 +136,133 @@ class MonitorWindow(QMainWindow):
                 padding-top: 10px;
             }
         """)
-        ocr_layout = QVBoxLayout()
-        ocr_group.setLayout(ocr_layout)
+        config_layout = QVBoxLayout()
+        config_group.setLayout(config_layout)
         
-        # 置信度标签
-        self.confidence_label = QLabel("置信度: 0.00")
-        self.confidence_label.setFont(QFont("微软雅黑", 11))
-        self.confidence_label.setStyleSheet("padding: 5px;")
-        ocr_layout.addWidget(self.confidence_label)
+        # 购买点击延迟设置
+        delay_layout = QHBoxLayout()
+        delay_label = QLabel("购买点击延迟:")
+        delay_label.setFont(QFont("微软雅黑", 10))
+        delay_label.setFixedWidth(120)
+        self.delay_spin = QDoubleSpinBox()
+        self.delay_spin.setRange(0.0, 5.0)
+        self.delay_spin.setValue(self.buy_click_delay)
+        self.delay_spin.setSingleStep(0.1)
+        self.delay_spin.setDecimals(2)
+        self.delay_spin.setSuffix(" 秒")
+        self.delay_spin.setFont(QFont("微软雅黑", 10))
+        self.delay_spin.valueChanged.connect(self.on_delay_changed)
+        delay_layout.addWidget(delay_label)
+        delay_layout.addWidget(self.delay_spin)
+        delay_layout.addStretch()
+        config_layout.addLayout(delay_layout)
         
-        # 置信度进度条
-        self.confidence_bar = QProgressBar()
-        self.confidence_bar.setMaximum(100)
-        self.confidence_bar.setValue(0)
-        self.confidence_bar.setStyleSheet("""
-            QProgressBar {
-                border: 2px solid grey;
-                border-radius: 5px;
-                text-align: center;
+        # 购买到确认延迟设置
+        buy_to_verify_layout = QHBoxLayout()
+        buy_to_verify_label = QLabel("购买确认间延迟:")
+        buy_to_verify_label.setFont(QFont("微软雅黑", 10))
+        buy_to_verify_label.setFixedWidth(120)
+        self.buy_to_verify_spin = QDoubleSpinBox()
+        self.buy_to_verify_spin.setRange(0.0, 5.0)
+        self.buy_to_verify_spin.setValue(self.buy_to_verify_delay)
+        self.buy_to_verify_spin.setSingleStep(0.1)
+        self.buy_to_verify_spin.setDecimals(2)
+        self.buy_to_verify_spin.setSuffix(" 秒")
+        self.buy_to_verify_spin.setFont(QFont("微软雅黑", 10))
+        self.buy_to_verify_spin.valueChanged.connect(self.on_buy_to_verify_delay_changed)
+        buy_to_verify_layout.addWidget(buy_to_verify_label)
+        buy_to_verify_layout.addWidget(self.buy_to_verify_spin)
+        buy_to_verify_layout.addStretch()
+        config_layout.addLayout(buy_to_verify_layout)
+        
+        # 购买按钮点击次数
+        buy_clicks_layout = QHBoxLayout()
+        buy_clicks_label = QLabel("购买点击次数:")
+        buy_clicks_label.setFont(QFont("微软雅黑", 10))
+        buy_clicks_label.setFixedWidth(120)
+        self.buy_clicks_spin = QSpinBox()
+        self.buy_clicks_spin.setRange(1, 10)
+        self.buy_clicks_spin.setValue(self.buy_clicks)
+        self.buy_clicks_spin.setSuffix(" 次")
+        self.buy_clicks_spin.setFont(QFont("微软雅黑", 10))
+        self.buy_clicks_spin.valueChanged.connect(self.on_buy_clicks_changed)
+        buy_clicks_layout.addWidget(buy_clicks_label)
+        buy_clicks_layout.addWidget(self.buy_clicks_spin)
+        buy_clicks_layout.addStretch()
+        config_layout.addLayout(buy_clicks_layout)
+        
+        # 确认按钮点击次数
+        verify_clicks_layout = QHBoxLayout()
+        verify_clicks_label = QLabel("确认点击次数:")
+        verify_clicks_label.setFont(QFont("微软雅黑", 10))
+        verify_clicks_label.setFixedWidth(120)
+        self.verify_clicks_spin = QSpinBox()
+        self.verify_clicks_spin.setRange(1, 10)
+        self.verify_clicks_spin.setValue(self.verify_clicks)
+        self.verify_clicks_spin.setSuffix(" 次")
+        self.verify_clicks_spin.setFont(QFont("微软雅黑", 10))
+        self.verify_clicks_spin.valueChanged.connect(self.on_verify_clicks_changed)
+        verify_clicks_layout.addWidget(verify_clicks_label)
+        verify_clicks_layout.addWidget(self.verify_clicks_spin)
+        verify_clicks_layout.addStretch()
+        config_layout.addLayout(verify_clicks_layout)
+        
+        # 确认按钮点击间隔
+        verify_interval_layout = QHBoxLayout()
+        verify_interval_label = QLabel("确认点击间隔:")
+        verify_interval_label.setFont(QFont("微软雅黑", 10))
+        verify_interval_label.setFixedWidth(120)
+        self.verify_interval_spin = QDoubleSpinBox()
+        self.verify_interval_spin.setRange(0.01, 1.0)
+        self.verify_interval_spin.setValue(self.verify_interval)
+        self.verify_interval_spin.setSingleStep(0.01)
+        self.verify_interval_spin.setDecimals(2)
+        self.verify_interval_spin.setSuffix(" 秒")
+        self.verify_interval_spin.setFont(QFont("微软雅黑", 10))
+        self.verify_interval_spin.valueChanged.connect(self.on_verify_interval_changed)
+        verify_interval_layout.addWidget(verify_interval_label)
+        verify_interval_layout.addWidget(self.verify_interval_spin)
+        verify_interval_layout.addStretch()
+        config_layout.addLayout(verify_interval_layout)
+        
+        # OCR识别间隔
+        ocr_interval_layout = QHBoxLayout()
+        ocr_interval_label = QLabel("OCR识别间隔:")
+        ocr_interval_label.setFont(QFont("微软雅黑", 10))
+        ocr_interval_label.setFixedWidth(120)
+        self.ocr_interval_spin = QDoubleSpinBox()
+        self.ocr_interval_spin.setRange(0.01, 1.0)
+        self.ocr_interval_spin.setValue(self.ocr_interval)
+        self.ocr_interval_spin.setSingleStep(0.01)
+        self.ocr_interval_spin.setDecimals(2)
+        self.ocr_interval_spin.setSuffix(" 秒")
+        self.ocr_interval_spin.setFont(QFont("微软雅黑", 10))
+        self.ocr_interval_spin.valueChanged.connect(self.on_ocr_interval_changed)
+        ocr_interval_layout.addWidget(ocr_interval_label)
+        ocr_interval_layout.addWidget(self.ocr_interval_spin)
+        ocr_interval_layout.addStretch()
+        config_layout.addLayout(ocr_interval_layout)
+        
+        # 任务完成后继续运行选项
+        continue_layout = QHBoxLayout()
+        self.continue_checkbox = QCheckBox("任务完成后继续运行")
+        self.continue_checkbox.setFont(QFont("微软雅黑", 10))
+        self.continue_checkbox.setChecked(self.continue_after_complete)
+        self.continue_checkbox.stateChanged.connect(self.on_continue_changed)
+        self.continue_checkbox.setStyleSheet("""
+            QCheckBox {
+                padding: 5px;
             }
-            QProgressBar::chunk {
-                background-color: #4CAF50;
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
             }
         """)
-        ocr_layout.addWidget(self.confidence_bar)
+        continue_layout.addWidget(self.continue_checkbox)
+        continue_layout.addStretch()
+        config_layout.addLayout(continue_layout)
         
-        # OCR文本
-        self.ocr_label = QLabel("识别文本: ")
-        self.ocr_label.setFont(QFont("微软雅黑", 10))
-        self.ocr_label.setWordWrap(True)
-        self.ocr_label.setStyleSheet("color: #757575; padding: 5px;")
-        ocr_layout.addWidget(self.ocr_label)
-        
-        main_layout.addWidget(ocr_group)
-        
-        # ========== 统计信息组 ==========
-        stats_group = QGroupBox("统计信息")
-        stats_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 14px;
-                font-weight: bold;
-                border: 2px solid #607D8B;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 10px;
-            }
-        """)
-        stats_layout = QVBoxLayout()
-        stats_group.setLayout(stats_layout)
-        
-        self.clicks_label = QLabel("总点击次数: 0")
-        self.clicks_label.setFont(QFont("微软雅黑", 11))
-        self.clicks_label.setStyleSheet("padding: 5px;")
-        stats_layout.addWidget(self.clicks_label)
-        
-        main_layout.addWidget(stats_group)
+        main_layout.addWidget(config_group)
         
         # ========== 日志区域 ==========
         log_group = QGroupBox("运行日志")
@@ -332,23 +414,58 @@ class MonitorWindow(QMainWindow):
         """更新OCR信息"""
         self.ocr_text = text
         self.confidence = confidence
-        
-        self.ocr_label.setText(f"识别文本: {text}")
-        self.confidence_label.setText(f"置信度: {confidence:.2f}")
-        self.confidence_bar.setValue(int(confidence * 100))
-        
-        # 根据置信度改变颜色
-        if confidence > 0.9:
-            self.confidence_label.setStyleSheet("color: #4CAF50; padding: 5px;")
-        elif confidence > 0.7:
-            self.confidence_label.setStyleSheet("color: #FF9800; padding: 5px;")
-        else:
-            self.confidence_label.setStyleSheet("color: #F44336; padding: 5px;")
+    
+    def on_delay_changed(self, value):
+        """购买点击延迟变更"""
+        self.buy_click_delay = value
+        self.add_log(f"⚙️ 购买点击延迟已设置为: {value}秒")
+    
+    def on_buy_to_verify_delay_changed(self, value):
+        """购买到确认延迟变更"""
+        self.buy_to_verify_delay = value
+        self.add_log(f"⚙️ 购买确认间延迟已设置为: {value}秒")
+    
+    def on_buy_clicks_changed(self, value):
+        """购买点击次数变更"""
+        self.buy_clicks = value
+        self.add_log(f"⚙️ 购买点击次数已设置为: {value}次")
+    
+    def on_verify_clicks_changed(self, value):
+        """确认点击次数变更"""
+        self.verify_clicks = value
+        self.add_log(f"⚙️ 确认点击次数已设置为: {value}次")
+    
+    def on_verify_interval_changed(self, value):
+        """确认点击间隔变更"""
+        self.verify_interval = value
+        self.add_log(f"⚙️ 确认点击间隔已设置为: {value}秒")
+    
+    def on_ocr_interval_changed(self, value):
+        """OCR识别间隔变更"""
+        self.ocr_interval = value
+        self.add_log(f"⚙️ OCR识别间隔已设置为: {value}秒")
+    
+    def on_continue_changed(self, state):
+        """任务完成后继续运行选项变更"""
+        self.continue_after_complete = (state == 2)  # Qt.CheckState.Checked = 2
+        status = "继续运行" if self.continue_after_complete else "停止"
+        self.add_log(f"⚙️ 任务完成后将: {status}")
+    
+    def get_config(self):
+        """获取当前配置"""
+        return {
+            'buy_click_delay': self.buy_click_delay,
+            'buy_to_verify_delay': self.buy_to_verify_delay,
+            'buy_clicks': self.buy_clicks,
+            'verify_clicks': self.verify_clicks,
+            'verify_interval': self.verify_interval,
+            'ocr_interval': self.ocr_interval,
+            'continue_after_complete': self.continue_after_complete
+        }
     
     def increment_clicks(self):
-        """增加点击次数"""
+        """增加点击次数（保留用于兼容性）"""
         self.click_count += 1
-        self.clicks_label.setText(f"总点击次数: {self.click_count}")
     
     def add_log(self, message):
         """添加日志"""

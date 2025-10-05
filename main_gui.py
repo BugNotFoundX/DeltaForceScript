@@ -46,15 +46,6 @@ def run_as_admin():
             return False
     return True
 
-ocr = PaddleOCR(
-    use_doc_orientation_classify=False,
-    use_doc_unwarping=False,
-    use_textline_orientation=False,
-    text_detection_model_dir="models/PP-OCRv5_server_det_infer",
-    text_recognition_model_dir="models/PP-OCRv5_server_rec_infer",
-    device='gpu:0'
-)
-
 
 def click_region_center(region: tuple, clicks=2, interval=0.1):
     """点击区域的中心位置 - 使用多种方法尝试
@@ -82,10 +73,12 @@ class ScriptThread(QThread):
     click_performed = pyqtSignal()
     task_completed = pyqtSignal()
     
-    def __init__(self, selector, win_cap):
+    def __init__(self, selector, win_cap, ocr, config):
         super().__init__()
         self.selector = selector
         self.win_cap = win_cap
+        self.ocr = ocr
+        self.config = config
         self.is_running = True
         self.is_paused = False
         
@@ -117,7 +110,7 @@ class ScriptThread(QThread):
                 time_roi = frame[top:bottom, left:right]
                 # cv2.imwrite("time_roi.png", time_roi)
                 
-                ocr_result = ocr.predict(time_roi)
+                ocr_result = self.ocr.predict(time_roi)
                 
                 if not ocr_result or not ocr_result[0]['rec_texts'][0]:
                     continue
@@ -138,28 +131,37 @@ class ScriptThread(QThread):
                     self.timer_updated.emit(minutes, seconds)
                     
                     if minutes == '0' and seconds == '1':
-                        self.status_updated.emit("⚠️ 准备点击...")
-                        time.sleep(0.9)
+                        self.status_updated.emit("准备点击...")
+                        time.sleep(self.config['buy_click_delay'])
                         
                         if buy_region:
-                            self.status_updated.emit("🖱️ 点击购买按钮...")
-                            click_region_center(buy_region, clicks=1)
+                            self.status_updated.emit("点击购买按钮...")
+                            click_region_center(buy_region, clicks=self.config['buy_clicks'])
                             self.click_performed.emit()
-                            time.sleep(0.18)
+                        
+                        # 购买到确认之间的延迟
+                        time.sleep(self.config['buy_to_verify_delay'])
                         
                         if verify_region:
-                            self.status_updated.emit("🖱️ 点击确认按钮...")
-                            click_region_center(verify_region, clicks=1)
+                            self.status_updated.emit("点击确认按钮...")
+                            click_region_center(verify_region, clicks=self.config['verify_clicks'], 
+                                              interval=self.config['verify_interval'])
                             self.click_performed.emit()
                         
-                        self.status_updated.emit("✅ 任务完成！")
+                        self.status_updated.emit("任务完成！")
                         self.task_completed.emit()
-                        break
+                        
+                        # 根据配置决定是否继续
+                        if not self.config['continue_after_complete']:
+                            break
+                        else:
+                            self.status_updated.emit("继续监控中...")
+                            time.sleep(self.config['ocr_interval'])
                     else:
-                        time.sleep(0.05)
+                        time.sleep(self.config['ocr_interval'])
                     
         except Exception as e:
-            self.status_updated.emit(f"❌ 错误: {str(e)}")
+            self.status_updated.emit(f"错误: {str(e)}")
             print(f"脚本运行错误: {e}")
     
     def pause(self):
@@ -180,7 +182,14 @@ def main():
     selector.load_regions_from_file("regions_2k.json")
     
     win_cap = WindowCapture(max_buffer_len=2)
-    
+    ocr = PaddleOCR(
+        use_doc_orientation_classify=False,
+        use_doc_unwarping=False,
+        use_textline_orientation=False,
+        text_detection_model_dir="models/PP-OCRv5_server_det_infer",
+        text_recognition_model_dir="models/PP-OCRv5_server_rec_infer",
+        device='gpu:0'
+    )
     window = MonitorWindow()
     window.show()
     window.add_log("程序已启动")
@@ -191,13 +200,15 @@ def main():
         nonlocal script_thread
         window.add_log("正在启动监控线程...")
         
-        script_thread = ScriptThread(selector, win_cap)
+        # 获取当前配置
+        config = window.get_config()
+        window.add_log(f"配置: 购买延迟={config['buy_click_delay']}秒, 间隔延迟={config['buy_to_verify_delay']}秒")
+        
+        script_thread = ScriptThread(selector, win_cap, ocr, config)
         
         script_thread.status_updated.connect(lambda s: window.update_status(s))
         script_thread.status_updated.connect(lambda s: window.add_log(s))
         script_thread.timer_updated.connect(lambda m, s: window.update_timer(m, s))
-        script_thread.ocr_updated.connect(lambda t, c: window.update_ocr(t, c))
-        script_thread.click_performed.connect(lambda: window.increment_clicks())
         script_thread.task_completed.connect(lambda: window.on_complete())
         
         script_thread.start()
