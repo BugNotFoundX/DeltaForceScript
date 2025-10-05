@@ -4,11 +4,10 @@
 # @Description: PyQt6 GUI 监控窗口
 
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                             QLabel, QPushButton, QGroupBox, QTextEdit, QProgressBar,
+                             QLabel, QPushButton, QGroupBox, QTextEdit,
                              QSpinBox, QDoubleSpinBox, QCheckBox)
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject
-from PyQt6.QtGui import QFont, QPalette, QColor
-import sys
+from PyQt6.QtCore import Qt, pyqtSignal, QObject
+from PyQt6.QtGui import QFont
 
 
 class ScriptController(QObject):

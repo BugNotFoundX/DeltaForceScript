@@ -1,10 +1,9 @@
-dxcam
-cv2
-pywin32
-Pillow
-pyautogui
-PyQt6
-pydirectinput
+dxcam==0.0.5
+numpy==2.2.6
+pywin32==311
+pillow==11.3.0
+PyQt6==6.9.1
+PyDirectInput==1.0.4
 
 paddleocr==3.2.0
 paddlepaddle-gpu==3.2.0

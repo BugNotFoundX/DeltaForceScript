@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Author: BugNotFound
 # @Date: 2025-10-02 14:45:20
-# @LastEditTime: 2025-10-04 18:29:29
+# @LastEditTime: 2025-10-05 15:58:40
 # @FilePath: /DeltaForceScript/window_capture.py
 # @Description: 窗口截图工具 - 包含Windows Graphics Capture API支持
 
 import dxcam
 import win32gui
-import win32api
-import cv2
 import numpy as np
 
 def enum_windows_with_title():
