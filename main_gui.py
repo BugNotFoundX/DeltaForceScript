@@ -47,7 +47,7 @@ def run_as_admin():
     return True
 
 
-def click_region_center(region: tuple, clicks=2, interval=0.1):
+def click_region_center(region: tuple, clicks=1, interval=0.1):
     """点击区域的中心位置 - 使用多种方法尝试
     
     Args:
@@ -57,12 +57,16 @@ def click_region_center(region: tuple, clicks=2, interval=0.1):
     center_x = (left + right) // 2
     center_y = (top + bottom) // 2
     
-    print(f"准备点击位置: ({center_x}, {center_y})")
+    # print(f"准备点击位置: ({center_x}, {center_y})")
+    # 在20个像素的范围内随机偏移，防止被检测
+    center_x += int((os.urandom(1)[0] / 255 - 0.5) * 10)
+    center_y += int((os.urandom(1)[0] / 255 - 0.5) * 10)
 
-    pydirectinput.moveTo(center_x, center_y)
-    time.sleep(0.05)
     pydirectinput.click(x=center_x, y=center_y, clicks=clicks, interval=interval, button=pydirectinput.LEFT)
 
+def extract_and_merge_digits(s: str) -> str:
+    """识别字符串中的所有数字并合并为一个新字符串"""
+    return ''.join(re.findall(r'\d', s))
 
 class ScriptThread(QThread):
     """脚本运行线程"""
@@ -73,7 +77,7 @@ class ScriptThread(QThread):
     click_performed = pyqtSignal()
     task_completed = pyqtSignal()
     
-    def __init__(self, selector, win_cap, ocr, config):
+    def __init__(self, selector, win_cap: WindowCapture, ocr, config):
         super().__init__()
         self.selector = selector
         self.win_cap = win_cap
@@ -81,85 +85,95 @@ class ScriptThread(QThread):
         self.config = config
         self.is_running = True
         self.is_paused = False
-        
+    
+    def frame_cut(self, frame, region):
+        """裁剪图像区域"""
+        left, top, right, bottom = region
+        return frame[top:bottom, left:right]
+
+    def ocr_region(self, region):
+        """OCR 识别"""
+        frame = self.win_cap.capture()
+        while frame is None or frame.size == 0: frame = self.win_cap.capture()
+        roi = self.frame_cut(frame, region)
+        res = self.ocr.ocr(roi)
+        if not res or not res[0]['rec_texts']:
+            return ""
+        return res[0]['rec_texts'][0]
+
     def run(self):
         """运行脚本"""
         try:
             self.status_updated.emit("初始化中...")
             
             time_region = self.selector.get_region("time")
-            if not time_region:
-                self.status_updated.emit("❌ 错误: 未找到time区域")
-                return
-                
-            left, top, right, bottom = time_region
+            buy_region = self.selector.get_region("buy")
+            verify_region = self.selector.get_region("verify")
+            refresh_region = self.selector.get_region("refresh")
+            money_region = self.selector.get_region("money")
+
+            money = self.ocr_region(money_region)
+            money = extract_and_merge_digits(money)
+            self.status_updated.emit(f"初始三角币: {money}")
             pattern = re.compile(r'(\d+)\s*分\s*(\d+)\s*秒')
             
             self.status_updated.emit("监控中...")
-            buy_region = self.selector.get_region("buy")
-            verify_region = self.selector.get_region("verify")
+            click_region_center(refresh_region)
             while self.is_running:
-                while self.is_paused and self.is_running:
-                    time.sleep(0.1)
-                
-                if not self.is_running:
-                    break
-                
-                frame = self.win_cap.capture()
-                    
-                time_roi = frame[top:bottom, left:right]
-                # cv2.imwrite("time_roi.png", time_roi)
-                
-                ocr_result = self.ocr.predict(time_roi)
-                
-                if not ocr_result or not ocr_result[0]['rec_texts'][0]:
-                    continue
-                
-                res = ocr_result[0]['rec_texts'][0]
-                confidence = ocr_result[0]['rec_scores'][0]
-                
-                self.ocr_updated.emit(res, confidence)
-                
+                # 暂停时等待
+                while self.is_paused: time.sleep(0.2); continue
+                # 截图并OCR识别时间
+                res = self.ocr_region(time_region)
                 match = pattern.search(res)
-                minutes = "59"
-                seconds = "59"
-                
                 if match:
-                    minutes = match.group(1)
-                    seconds = match.group(2)
-                    
-                    self.timer_updated.emit(minutes, seconds)
-                    
-                    if minutes == '0' and seconds == '1':
+                    minutes = int(match.group(1))
+                    seconds = int(match.group(2))
+                    # 更新时间显示
+                    self.timer_updated.emit(str(minutes), str(seconds))
+                    # 剩余时间到 0:01 时执行点击
+                    if minutes == 0 and seconds == 1:
                         self.status_updated.emit("准备点击...")
                         time.sleep(self.config['buy_click_delay'])
-                        
-                        if buy_region:
-                            self.status_updated.emit("点击购买按钮...")
-                            click_region_center(buy_region, clicks=self.config['buy_clicks'])
-                            self.click_performed.emit()
-                        
+                        # 点击购买按钮
+                        self.status_updated.emit("点击购买按钮...")
+                        click_region_center(buy_region, interval=self.config['buy_interval'])
+                        # 校验点击是否成功
+                        verify = self.ocr_region(verify_region)
+                        while "确认" not in verify:
+                            click_region_center(buy_region, interval=self.config['buy_interval'])
+                            verify = self.ocr_region(verify_region)
                         # 购买到确认之间的延迟
                         time.sleep(self.config['buy_to_verify_delay'])
-                        
-                        if verify_region:
-                            self.status_updated.emit("点击确认按钮...")
-                            click_region_center(verify_region, clicks=self.config['verify_clicks'], 
-                                              interval=self.config['verify_interval'])
-                            self.click_performed.emit()
-                        
-                        self.status_updated.emit("任务完成！")
-                        self.task_completed.emit()
-                        
+                        # 点击确认按钮
+                        self.status_updated.emit("点击确认按钮...")
+                        click_region_center(verify_region, interval=self.config['verify_interval'])
+                        # 校验点到了确认
+                        verify = self.ocr_region(verify_region)
+                        while "确认" in verify:
+                            click_region_center(verify_region, interval=self.config['verify_interval'])
+                            verify = self.ocr_region(verify_region)
+                            self.status_updated.emit(f"确认按钮识别结果: {verify}")
+
+                        self.status_updated.emit("等待刷新...")
+                        time.sleep(0.5)
+                        click_region_center(refresh_region, interval=0.5)
+                        # 检查三角币是否变化
+                        now_money = self.ocr_region(money_region)
+                        now_money = extract_and_merge_digits(now_money)
+                        self.status_updated.emit(f"当前三角币: {now_money}")
+                        self.config['continue_after_complete'] &= (now_money == money)
                         # 根据配置决定是否继续
                         if not self.config['continue_after_complete']:
+                            self.status_updated.emit("任务完成！")
+                            self.task_completed.emit()
                             break
                         else:
                             self.status_updated.emit("继续监控中...")
-                            time.sleep(self.config['ocr_interval'])
                     else:
-                        time.sleep(self.config['ocr_interval'])
-                    
+                        if minutes > 0 or seconds > 4:
+                            time.sleep(self.config['ocr_interval'])
+                else:
+                    time.sleep(0.95)
         except Exception as e:
             self.status_updated.emit(f"错误: {str(e)}")
             print(f"脚本运行错误: {e}")
@@ -181,7 +195,9 @@ def main():
     selector = RegionSelector()
     selector.load_regions_from_file("regions_2k.json")
     
-    win_cap = WindowCapture(max_buffer_len=2)
+    win_cap = WindowCapture(max_buffer_len=1)
+    
+    # 初始化 OCR
     ocr = PaddleOCR(
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,

@@ -36,13 +36,12 @@ class MonitorWindow(QMainWindow):
         self.status = "就绪"
         
         # 配置变量
-        self.buy_click_delay = 0.6  # 购买点击延迟（秒）
-        self.buy_to_verify_delay = 0.0  # 购买到确认的延迟（秒）
-        self.buy_clicks = 1  # 购买按钮点击次数
-        self.verify_clicks = 2  # 确认按钮点击次数
-        self.verify_interval = 0.08  # 确认按钮点击间隔（秒）
-        self.ocr_interval = 0.05  # OCR识别间隔（秒）
-        self.continue_after_complete = False  # 任务完成后继续运行
+        self.buy_click_delay = 0.65  # 购买点击延迟（秒）
+        self.buy_to_verify_delay = 0.1  # 购买到确认的延迟（秒）
+        self.buy_interval = 0.1  # 购买按钮点击间隔（秒）
+        self.verify_interval = 0.1  # 确认按钮点击间隔（秒）
+        self.ocr_interval = 0.95  # OCR识别间隔（time >= 5）（秒）
+        self.continue_after_complete = True  # 任务完成后继续运行
         
         self.init_ui()
         
@@ -158,7 +157,7 @@ class MonitorWindow(QMainWindow):
         
         # 购买到确认延迟设置
         buy_to_verify_layout = QHBoxLayout()
-        buy_to_verify_label = QLabel("购买确认间延迟:")
+        buy_to_verify_label = QLabel("确认点击延迟:")
         buy_to_verify_label.setFont(QFont("微软雅黑", 10))
         buy_to_verify_label.setFixedWidth(120)
         self.buy_to_verify_spin = QDoubleSpinBox()
@@ -174,37 +173,23 @@ class MonitorWindow(QMainWindow):
         buy_to_verify_layout.addStretch()
         config_layout.addLayout(buy_to_verify_layout)
         
-        # 购买按钮点击次数
-        buy_clicks_layout = QHBoxLayout()
-        buy_clicks_label = QLabel("购买点击次数:")
-        buy_clicks_label.setFont(QFont("微软雅黑", 10))
-        buy_clicks_label.setFixedWidth(120)
-        self.buy_clicks_spin = QSpinBox()
-        self.buy_clicks_spin.setRange(1, 10)
-        self.buy_clicks_spin.setValue(self.buy_clicks)
-        self.buy_clicks_spin.setSuffix(" 次")
-        self.buy_clicks_spin.setFont(QFont("微软雅黑", 10))
-        self.buy_clicks_spin.valueChanged.connect(self.on_buy_clicks_changed)
-        buy_clicks_layout.addWidget(buy_clicks_label)
-        buy_clicks_layout.addWidget(self.buy_clicks_spin)
-        buy_clicks_layout.addStretch()
-        config_layout.addLayout(buy_clicks_layout)
-        
-        # 确认按钮点击次数
-        verify_clicks_layout = QHBoxLayout()
-        verify_clicks_label = QLabel("确认点击次数:")
-        verify_clicks_label.setFont(QFont("微软雅黑", 10))
-        verify_clicks_label.setFixedWidth(120)
-        self.verify_clicks_spin = QSpinBox()
-        self.verify_clicks_spin.setRange(1, 10)
-        self.verify_clicks_spin.setValue(self.verify_clicks)
-        self.verify_clicks_spin.setSuffix(" 次")
-        self.verify_clicks_spin.setFont(QFont("微软雅黑", 10))
-        self.verify_clicks_spin.valueChanged.connect(self.on_verify_clicks_changed)
-        verify_clicks_layout.addWidget(verify_clicks_label)
-        verify_clicks_layout.addWidget(self.verify_clicks_spin)
-        verify_clicks_layout.addStretch()
-        config_layout.addLayout(verify_clicks_layout)
+        # 购买按钮点击间隔
+        buy_interval_layout = QHBoxLayout()
+        buy_interval_label = QLabel("购买点击间隔:")
+        buy_interval_label.setFont(QFont("微软雅黑", 10))
+        buy_interval_label.setFixedWidth(120)
+        self.buy_interval_spin = QDoubleSpinBox()
+        self.buy_interval_spin.setRange(0.01, 1.0)
+        self.buy_interval_spin.setValue(self.buy_interval)
+        self.buy_interval_spin.setSingleStep(0.01)
+        self.buy_interval_spin.setDecimals(2)
+        self.buy_interval_spin.setSuffix(" 秒")
+        self.buy_interval_spin.setFont(QFont("微软雅黑", 10))
+        self.buy_interval_spin.valueChanged.connect(self.on_buy_interval_changed)
+        buy_interval_layout.addWidget(buy_interval_label)
+        buy_interval_layout.addWidget(self.buy_interval_spin)
+        buy_interval_layout.addStretch()
+        config_layout.addLayout(buy_interval_layout)
         
         # 确认按钮点击间隔
         verify_interval_layout = QHBoxLayout()
@@ -226,7 +211,7 @@ class MonitorWindow(QMainWindow):
         
         # OCR识别间隔
         ocr_interval_layout = QHBoxLayout()
-        ocr_interval_label = QLabel("OCR识别间隔:")
+        ocr_interval_label = QLabel("OCR识别间隔(t>4s):")
         ocr_interval_label.setFont(QFont("微软雅黑", 10))
         ocr_interval_label.setFixedWidth(120)
         self.ocr_interval_spin = QDoubleSpinBox()
@@ -424,15 +409,10 @@ class MonitorWindow(QMainWindow):
         self.buy_to_verify_delay = value
         self.add_log(f"⚙️ 购买确认间延迟已设置为: {value}秒")
     
-    def on_buy_clicks_changed(self, value):
-        """购买点击次数变更"""
-        self.buy_clicks = value
-        self.add_log(f"⚙️ 购买点击次数已设置为: {value}次")
-    
-    def on_verify_clicks_changed(self, value):
-        """确认点击次数变更"""
-        self.verify_clicks = value
-        self.add_log(f"⚙️ 确认点击次数已设置为: {value}次")
+    def on_buy_interval_changed(self, value):
+        """购买点击间隔变更"""
+        self.buy_interval = value
+        self.add_log(f"⚙️ 购买点击间隔已设置为: {value}秒")
     
     def on_verify_interval_changed(self, value):
         """确认点击间隔变更"""
@@ -455,8 +435,7 @@ class MonitorWindow(QMainWindow):
         return {
             'buy_click_delay': self.buy_click_delay,
             'buy_to_verify_delay': self.buy_to_verify_delay,
-            'buy_clicks': self.buy_clicks,
-            'verify_clicks': self.verify_clicks,
+            'buy_interval': self.buy_interval,
             'verify_interval': self.verify_interval,
             'ocr_interval': self.ocr_interval,
             'continue_after_complete': self.continue_after_complete

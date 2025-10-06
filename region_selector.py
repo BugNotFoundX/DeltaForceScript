@@ -237,6 +237,7 @@ class RegionSelector:
         """
         results = {}
         for name in names:
+            input(f"按回车键开始选择区域 '{name}'，按ESC跳过...")
             try:
                 region = self.select_region(name)
                 results[name] = region
@@ -293,7 +294,7 @@ if __name__ == "__main__":
     # 示例：选择单个区域
     selector = RegionSelector()
 
-    regions = selector.select_multiple_regions(["time", "buy", "verify"])
+    regions = selector.select_multiple_regions(["time", "buy", "verify", "refresh", "money"])
     print(f"所有区域: {regions}")
     
     # 保存配置
