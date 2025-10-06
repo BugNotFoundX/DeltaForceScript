@@ -124,7 +124,7 @@ class MonitorWindow(QMainWindow):
         main_layout.addWidget(timer_group)
         
         # ========== 脚本配置组 ==========
-        config_group = QGroupBox("⚙️ 脚本配置")
+        config_group = QGroupBox("脚本配置")
         config_group.setStyleSheet("""
             QGroupBox {
                 font-size: 14px;

@@ -133,7 +133,7 @@ class ScriptThread(QThread):
                     # 剩余时间到 0:03 时点击刷新（如果启用）
                     if minutes == 0 and seconds == 3 and self.config['click_refresh_at_3s']:
                         self.status_updated.emit("🔄 点击刷新...")
-                        click_region_center(refresh_region)
+                        click_region_center(refresh_region, interval=0.9)
                     # 剩余时间到 0:01 时执行点击
                     if minutes == 0 and seconds == 1:
                         self.status_updated.emit("准备点击...")
