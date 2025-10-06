@@ -131,6 +131,8 @@ class ScriptThread(QThread):
                     # 更新时间显示
                     self.timer_updated.emit(str(minutes), str(seconds))
                     # 剩余时间到 0:01 时执行点击
+                    if minutes == 0 or seconds == 2:
+                        click_region_center(refresh_region)
                     if minutes == 0 and seconds == 1:
                         self.status_updated.emit("准备点击...")
                         time.sleep(self.config['buy_click_delay'])
