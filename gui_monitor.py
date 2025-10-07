@@ -49,7 +49,7 @@ class MonitorWindow(QMainWindow):
     def init_ui(self):
         """初始化UI"""
         self.setWindowTitle("Delta Force 脚本监控")
-        self.setGeometry(100, 100, 500, 650)
+        self.setGeometry(100, 100, 350, 650)
         
         # 设置窗口始终置顶
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
@@ -62,13 +62,21 @@ class MonitorWindow(QMainWindow):
         main_layout = QVBoxLayout()
         central_widget.setLayout(main_layout)
         
-        # ========== 标题区域 ==========
+        # ========== 标题区域 ===========
         title_label = QLabel("🎮 Delta Force 自动购买脚本")
         title_font = QFont("微软雅黑", 16, QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("color: #4CAF50; padding: 10px;")
         main_layout.addWidget(title_label)
+
+        # 小字提示
+        tip_label = QLabel("请将脚本放置在屏幕左下角，避免影响OCR结果")
+        tip_font = QFont("微软雅黑", 9)
+        tip_label.setFont(tip_font)
+        tip_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        tip_label.setStyleSheet("color: #888888; padding-bottom: 6px;")
+        main_layout.addWidget(tip_label)
         
         # ========== 状态信息组 ==========
         status_group = QGroupBox("运行状态")
@@ -98,7 +106,7 @@ class MonitorWindow(QMainWindow):
         
         main_layout.addWidget(status_group)
         
-        # ========== 倒计时显示组 ==========
+        # ========== 倒计时显示组 ===========
         timer_group = QGroupBox("倒计时")
         timer_group.setStyleSheet("""
             QGroupBox {
@@ -112,15 +120,15 @@ class MonitorWindow(QMainWindow):
         """)
         timer_layout = QVBoxLayout()
         timer_group.setLayout(timer_layout)
-        
-        # 大字体倒计时
+
+        # 缩小字体和间距的倒计时
         self.timer_label = QLabel("--分--秒")
-        timer_font = QFont("微软雅黑", 32, QFont.Weight.Bold)
+        timer_font = QFont("微软雅黑", 24, QFont.Weight.Bold)
         self.timer_label.setFont(timer_font)
         self.timer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.timer_label.setStyleSheet("color: #00BCD4; padding: 20px;")
+        self.timer_label.setStyleSheet("color: #00BCD4; padding: 10px;")
         timer_layout.addWidget(self.timer_label)
-        
+
         main_layout.addWidget(timer_group)
         
         # ========== 脚本配置组 ==========
@@ -477,6 +485,16 @@ class MonitorWindow(QMainWindow):
         from datetime import datetime
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.log_text.append(f"[{timestamp}] {message}")
+        # 限制最大日志条数
+        max_lines = 100
+        if self.log_text.document().blockCount() > max_lines:
+            cursor = self.log_text.textCursor()
+            cursor.movePosition(cursor.Start)
+            for _ in range(self.log_text.document().blockCount() - max_lines):
+                cursor.select(cursor.LineUnderCursor)
+                cursor.removeSelectedText()
+                cursor.deleteChar()  # 删除换行符
+            self.log_text.setTextCursor(cursor)
         # 自动滚动到底部
         self.log_text.verticalScrollBar().setValue(
             self.log_text.verticalScrollBar().maximum()

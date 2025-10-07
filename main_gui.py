@@ -6,19 +6,26 @@
 
 import os
 import sys
-import ctypes
-from window_capture import *
-from region_selector import RegionSelector
-from paddleocr import PaddleOCR
-from gui_monitor import MonitorWindow
 import re
 import time
+import ctypes
+
+from window_capture import *
+from region_selector import RegionSelector
+from gui_monitor import MonitorWindow
+
+import numpy
+from paddleocr import PaddleOCR
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QThread, pyqtSignal
 import pydirectinput
 from colormath.color_objects import LabColor
 from colormath.color_diff import delta_e_cie2000
 
+def patch_asscalar(a):
+    return a.item()
+
+setattr(numpy, "asscalar", patch_asscalar)
 
 def is_admin():
     """检查是否以管理员权限运行"""
@@ -80,7 +87,7 @@ class ScriptThread(QThread):
     click_performed = pyqtSignal()
     task_completed = pyqtSignal()
     
-    def __init__(self, selector, win_cap: WindowCapture, ocr, config):
+    def __init__(self, selector: RegionSelector, win_cap: WindowCapture, ocr, config):
         super().__init__()
         self.selector = selector
         self.win_cap = win_cap
@@ -100,7 +107,7 @@ class ScriptThread(QThread):
         if frame is None or frame.size == 0: return False
         region = self.selector.get_region("verify_check")
         # 获取区域中心颜色
-        color_tmp = frame[(region[1] + region[3]) // 2, (region[0] + region[2]) // 2]
+        color_tmp = frame[((region[1] + region[3]) // 2), ((region[0] + region[2]) // 2)]
         center_color = LabColor(color_tmp[0], color_tmp[1], color_tmp[2])  # BGR to Lab
         # 预设的确认按钮中心颜色 (BGR)
         target_color = LabColor(65, 109, 175)  # BGR：适用于金色砖皮
@@ -241,6 +248,12 @@ def main():
     )
     window = MonitorWindow()
     window.show()
+    # 移动到屏幕右下角
+    screen = app.primaryScreen().geometry()
+    win_h = window.height()
+    x = screen.x() + 10
+    y = screen.y() + screen.height() - win_h - 30
+    window.move(x, y)
     window.add_log("程序已启动")
     window.add_log("点击 [开始] 按钮启动监控")
     script_thread = None
