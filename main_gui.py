@@ -19,8 +19,9 @@ from paddleocr import PaddleOCR
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QThread, pyqtSignal
 import pydirectinput
-from colormath.color_objects import LabColor
+from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_diff import delta_e_cie2000
+from colormath.color_conversions import convert_color
 
 def patch_asscalar(a):
     return a.item()
@@ -108,13 +109,21 @@ class ScriptThread(QThread):
         region = self.selector.get_region("verify_check")
         # 获取区域中心颜色
         color_tmp = frame[((region[1] + region[3]) // 2), ((region[0] + region[2]) // 2)]
-        center_color = LabColor(color_tmp[0], color_tmp[1], color_tmp[2])  # BGR to Lab
+        center_color = convert_color(
+            sRGBColor(color_tmp[2], color_tmp[1], color_tmp[0]),  # BGR to sRGB
+            LabColor
+        )
         # 预设的确认按钮中心颜色 (BGR)
-        target_color = LabColor(65, 109, 175)  # BGR：适用于金色砖皮
+        target_color = convert_color(
+            sRGBColor(175, 109, 65),  # BGR：适用于金色砖皮
+            LabColor
+        )
         # 计算颜色差异
         delta_e = delta_e_cie2000(center_color, target_color)
         # 色差小说明显示了确认窗口
-        if delta_e < 1:  # 阈值可调整
+        self.status_updated.emit(f"颜色：{color_tmp[2], color_tmp[1], color_tmp[0]}")
+        self.status_updated.emit(f"色差: {delta_e}")
+        if delta_e < 80:
             return True
         return False
 
@@ -172,8 +181,13 @@ class ScriptThread(QThread):
                         # 点击购买按钮
                         click_region_center(buy_region, interval=0)
                         # 校验点击是否成功（可能造成延迟）
-                        while not self.verify_window():
-                            click_region_center(buy_region, interval=self.config['buy_interval'])
+                        buy_count = 0
+                        while not self.verify_window() and buy_count < 5:
+                            buy_count += 1
+                            if buy_count <= 2:
+                                time.sleep(self.config['buy_interval'])
+                                click_region_center(buy_region, interval=0)
+                        time.sleep(self.config['buy_to_verify_delay'])
                         # 点击确认按钮
                         click_region_center(verify_region, interval=self.config['verify_interval'])
                         self.status_updated.emit("点击确认按钮...")
@@ -181,12 +195,13 @@ class ScriptThread(QThread):
                         verify_counter = 0
                         while self.verify_window():
                             verify_counter += 1
-                            if verify_counter > 5:
-                                pydirectinput.click(1, 1, interval=0.5)
+                            if verify_counter > 2:
+                                pydirectinput.click(1, 1, interval=0.1)
                             click_region_center(verify_region, interval=self.config['verify_interval'])
-
+                        
                         self.status_updated.emit("等待刷新...")
                         time.sleep(1.5)
+                        if self.verify_window(): pydirectinput.press('esc')
                         click_region_center(refresh_region)
                         # 检查三角币是否变化
                         now_money = self.ocr_region(money_region)
@@ -223,11 +238,9 @@ class ScriptThread(QThread):
 def main():
     """主函数"""
     app = QApplication(sys.argv)
-    
     selector = RegionSelector()
     selector.load_regions_from_file("regions_2k.json")
-    
-    win_cap = WindowCapture(max_buffer_len=3)
+    win_cap = WindowCapture(max_buffer_len=2)
     
     # 初始化 OCR
     ocr = PaddleOCR(
