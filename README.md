@@ -1,6 +1,11 @@
 # DeltaForceScript
 
-- 这段时间有点忙，等12月中旬看看能不能优化一下性能，试试能不能靠网络抓包来搞，OCR还是太原始了
+## ISSUE的统一回复
+
+- 关于OCR识别的问题
+  我屏幕是2k的，可能需要改一下region_2k.json的数值，按照比例换算一下，您可以问问AI：“文件中提供了2k屏幕下的坐标，1k/4k下的对应坐标如何换算”
+- 关于requirement.txt安装paddlepaddle-gpu的问题，参考官方链接：https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/develop/install
+
 ## 项目简介
 
 DeltaForceScript 是一个基于 PyQt6 的 Windows 自动购买（抢购）辅助脚本，使用 PaddleOCR 从游戏/应用窗口读取倒计时文本并在指定时间自动点击购买和确认按钮。项目以简单的 GUI 暴露常用配置，让用户无需修改代码即可微调行为。
@@ -49,9 +54,11 @@ pip install -r requirement.txt
 
 ## 快速开始（运行步骤）
 
-1. 准备模型：将 `models/PP-OCRv5_server_det_infer` 和 `models/PP-OCRv5_server_rec_infer` 放在 `models/` 目录下。若没有，请从 PaddleOCR 官方导出或下载相应推理模型。
+1. 准备模型：将 `models/PP-OCRv5_server_det_infer` 和 `models/PP-OCRv5_server_rec_infer` 放在 `models/` 目录下。模型地址：
+   https://modelscope.cn/models/PaddlePaddle/PP-OCRv5_server_det
+   https://modelscope.cn/models/PaddlePaddle/PP-OCRv5_server_rec
 
-2. 运行程序（管理员权限）：
+3. 运行程序（管理员权限）：
 
 ```powershell
 python main_gui.py
@@ -98,6 +105,9 @@ python main_gui.py
 
 确保 `time` 区域能完整包含倒计时文本。
 
+## TODO
+
+- [ ] 这段时间有点忙，等12月底看看能不能优化一下性能，试试能不能靠网络抓包来搞（可能不太好搞，就怕他加密）
 
 ## 常见问题与故障排查
 
@@ -128,14 +138,6 @@ python main_gui.py
 - 改进 OCR 容错、区域选择体验
 - 增加更多点击策略（随机偏移、重试逻辑等）
 
-
-## 运行示例（命令摘要）
-
-```powershell
-# 创建虚拟环境并安装依赖（Windows PowerShell）
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirement.txt
 
 # 运行主程序
 python main_gui.py
