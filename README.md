@@ -38,10 +38,6 @@ DeltaForceScript 是一个基于 PyQt6 的 Windows 自动购买（抢购）辅�
 │       ├── inference.json
 │       ├── inference.pdiparams
 │       └── inference.yml
-├── __pycache__
-│   ├── gui_monitor.cpython-312.pyc
-│   ├── region_selector.cpython-312.pyc
-│   └── window_capture.cpython-312.pyc
 ├── README.md
 ├── regions_2k.json
 ├── region_selector.py
