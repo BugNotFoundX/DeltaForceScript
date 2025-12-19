@@ -247,7 +247,7 @@ class RegionSelector:
         
         return results
     
-    def get_region(self, name: str) -> Optional[Tuple[int, int, int, int]]:
+    def get_region(self, name: str) -> Tuple[int, int, int, int]:
         """获取已保存的区域坐标
         
         Args:
@@ -256,7 +256,7 @@ class RegionSelector:
         Returns:
             (left, top, right, bottom) 坐标，如果不存在则返回None
         """
-        return self.regions.get(name)
+        return self.regions[name]
     
     def get_all_regions(self) -> Dict[str, Tuple[int, int, int, int]]:
         """获取所有已保存的区域

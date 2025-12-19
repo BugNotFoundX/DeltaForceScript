@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author: BugNotFound
 # @Date: 2025-10-02 14:45:20
-# @LastEditTime: 2025-10-07 14:59:39
+# @LastEditTime: 2025-12-19 21:21:37
 # @FilePath: /DeltaForceScript/window_capture.py
 # @Description: 窗口截图工具 - 包含Windows Graphics Capture API支持
 
@@ -52,10 +52,16 @@ if __name__ == "__main__":
     selector = RegionSelector()
     selector.load_regions_from_file("regions_2k.json")
     frame = wc.capture()
-    region = selector.get_region("verify_check")
-    frame = frame[region[1]:region[3], region[0]:region[2]]
-    # 打印中心色块颜色
-    center_color = frame[frame.shape[0] // 2, frame.shape[1] // 2]
-    print("Center color (BGR):", center_color)
-    cv2.imwrite("screenshot.png", frame)
+    if frame is not None:
+        region = selector.get_region("verify_check")
+        if region is not None:
+            frame = frame[region[1]:region[3], region[0]:region[2]]
+        else:
+            raise ValueError("Region 'verify_check' not found")
+        # 打印中心色块颜色
+        center_color = frame[frame.shape[0] // 2, frame.shape[1] // 2]
+        print("Center color (BGR):", center_color)
+        cv2.imwrite("screenshot.png", frame)
+    else:
+        print("Failed to capture frame")
     wc.stop()

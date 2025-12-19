@@ -1,0 +1,21 @@
+[project]
+name = "deltaforcescript"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "colormath>=3.0.0",
+    "dxcam>=0.0.5",
+    "numpy>=2.3.5",
+    "paddleocr>=3.3.2",
+    "pillow>=12.0.0",
+    "pydirectinput>=1.0.4",
+    "pyqt6>=6.10.1",
+    "pywin32>=311",
+]
+
+# Note: paddlepaddle-gpu and paddleocr are installed via uv pip
+# due to index compatibility issues with uv dependency resolution:
+# uv pip install paddlepaddle-gpu==3.2.2 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+# uv pip install paddleocr==3.2.0
