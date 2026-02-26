@@ -4,86 +4,26 @@
 # @FilePath: /DeltaForceScript/main_gui.py
 # @Description: 带 PyQt6 GUI 的主程序
 
-import os
 import sys
 import re
 import time
-import ctypes
 
-from window_capture import *
+from window_capture import WindowCapture
 from region_selector import RegionSelector
 from gui_monitor import MonitorWindow
+from input_control import click_point, click_region_center
+from runtime_utils import extract_and_merge_digits, patch_numpy_asscalar
+from system_utils import is_admin, run_as_admin
 
-import numpy
 from paddleocr import PaddleOCR
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QThread, pyqtSignal
 import pydirectinput
-import win32api
-import win32con
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_conversions import convert_color
 
-def patch_asscalar(a):
-    return a.item()
-
-setattr(numpy, "asscalar", patch_asscalar)
-
-def is_admin():
-    """检查是否以管理员权限运行"""
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
-
-
-def run_as_admin():
-    """以管理员权限重新启动程序"""
-    if not is_admin():
-        print("正在请求管理员权限...")
-        # 获取当前脚本路径
-        script = os.path.abspath(sys.argv[0])
-        params = ' '.join([script] + sys.argv[1:])
-        
-        # 使用 ShellExecute 以管理员权限运行
-        ret = ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", sys.executable, params, None, 1
-        )
-        
-        if ret > 32:  # 成功
-            sys.exit(0)
-        else:
-            print("未获得管理员权限，继续以普通权限运行")
-            return False
-    return True
-
-
-def click_point(x: int, y: int, clicks=1, interval=0.1):
-    """使用 win32api 在屏幕坐标点击"""
-    win32api.SetCursorPos((x, y))
-    for i in range(max(1, int(clicks))):
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-        if i < max(1, int(clicks)) - 1 and interval > 0:
-            time.sleep(interval)
-
-
-def click_region_center(region: tuple, clicks=1, interval=0.1):
-    """点击区域中心位置（win32api 鼠标事件）"""
-    left, top, right, bottom = region
-    center_x = (left + right) // 2
-    center_y = (top + bottom) // 2
-
-    # 在 10 像素范围内随机偏移，防止被检测
-    center_x += int((os.urandom(1)[0] / 255 - 0.5) * 10)
-    center_y += int((os.urandom(1)[0] / 255 - 0.5) * 10)
-
-    click_point(center_x, center_y, clicks=clicks, interval=interval)
-
-def extract_and_merge_digits(s: str) -> str:
-    """识别字符串中的所有数字并合并为一个新字符串"""
-    return ''.join(re.findall(r'\d', s))
+patch_numpy_asscalar()
     
 
 class ScriptThread(QThread):
