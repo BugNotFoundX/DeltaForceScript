@@ -48,7 +48,7 @@ class WindowCapture():
     
 if __name__ == "__main__":
     wc = WindowCapture()
-    from region_selector import RegionSelector
+    from .region_selector import RegionSelector
     selector = RegionSelector()
     selector.load_regions_from_file("regions_2k.json")
     frame = wc.capture()

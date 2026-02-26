@@ -8,12 +8,12 @@ import sys
 import re
 import time
 
-from window_capture import WindowCapture
-from region_selector import RegionSelector
-from gui_monitor import MonitorWindow
-from input_control import click_point, click_region_center
-from runtime_utils import extract_and_merge_digits, patch_numpy_asscalar
-from system_utils import is_admin, run_as_admin
+from .window_capture import WindowCapture
+from .region_selector import RegionSelector
+from .gui_monitor import MonitorWindow
+from .input_control import click_point, click_region_center
+from .runtime_utils import extract_and_merge_digits, patch_numpy_asscalar
+from .system_utils import is_admin, run_as_admin
 
 from paddleocr import PaddleOCR
 from PyQt6.QtWidgets import QApplication

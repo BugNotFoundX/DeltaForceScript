@@ -1,7 +1,11 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "deltaforcescript"
 version = "0.1.0"
-description = "Add your description here"
+description = "三角洲抢枪皮脚本"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -9,13 +13,11 @@ dependencies = [
     "dxcam>=0.0.5",
     "numpy>=2.3.5",
     "paddleocr>=3.3.2",
-    "paddlepaddle-gpu==3.2.0",
+    "paddlepaddle-gpu==3.3.0",
     "pillow>=12.0.0",
-    "pydirectinput>=1.0.4",
     "pyqt6>=6.10.1",
     "pywin32>=311",
 ]
-
 
 [tool.uv]
 environments = [
@@ -23,7 +25,18 @@ environments = [
 ]
 
 [[tool.uv.index]]
-name = "paddlepaddle"
+name = "paddle-cu126"
 url = "https://www.paddlepaddle.org.cn/packages/stable/cu126/"
 explicit = true
 
+[tool.uv.sources]
+paddlepaddle-gpu = { index = "paddle-cu126" }
+
+[project.scripts]
+deltaforce-gui = "deltaforcescript.main:run"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
