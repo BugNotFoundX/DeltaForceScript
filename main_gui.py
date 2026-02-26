@@ -19,6 +19,8 @@ from paddleocr import PaddleOCR
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QThread, pyqtSignal
 import pydirectinput
+import win32api
+import win32con
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_conversions import convert_color
@@ -57,22 +59,27 @@ def run_as_admin():
     return True
 
 
+def click_point(x: int, y: int, clicks=1, interval=0.1):
+    """使用 win32api 在屏幕坐标点击"""
+    win32api.SetCursorPos((x, y))
+    for i in range(max(1, int(clicks))):
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        if i < max(1, int(clicks)) - 1 and interval > 0:
+            time.sleep(interval)
+
+
 def click_region_center(region: tuple, clicks=1, interval=0.1):
-    """点击区域的中心位置 - 使用多种方法尝试
-    
-    Args:
-        region: (left, top, right, bottom) 格式的区域坐标
-    """
+    """点击区域中心位置（win32api 鼠标事件）"""
     left, top, right, bottom = region
     center_x = (left + right) // 2
     center_y = (top + bottom) // 2
-    
-    # print(f"准备点击位置: ({center_x}, {center_y})")
-    # 在20个像素的范围内随机偏移，防止被检测
+
+    # 在 10 像素范围内随机偏移，防止被检测
     center_x += int((os.urandom(1)[0] / 255 - 0.5) * 10)
     center_y += int((os.urandom(1)[0] / 255 - 0.5) * 10)
 
-    pydirectinput.click(x=center_x, y=center_y, clicks=clicks, interval=interval, button=pydirectinput.LEFT)
+    click_point(center_x, center_y, clicks=clicks, interval=interval)
 
 def extract_and_merge_digits(s: str) -> str:
     """识别字符串中的所有数字并合并为一个新字符串"""
@@ -196,7 +203,7 @@ class ScriptThread(QThread):
                         while self.verify_window():
                             verify_counter += 1
                             if verify_counter > 2:
-                                pydirectinput.click(1, 1, interval=0.1)
+                                click_point(1, 1, interval=0.1)
                             click_region_center(verify_region, interval=self.config['verify_interval'])
                         
                         self.status_updated.emit("等待刷新...")
