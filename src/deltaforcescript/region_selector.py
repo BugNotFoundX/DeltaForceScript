@@ -96,7 +96,7 @@ class RegionSelector:
         return (left, top, right, bottom)
 
     def _put_chinese_text(self, img: np.ndarray, text: str, position: Tuple[int, int], 
-                          font: ImageFont.FreeTypeFont, color: Tuple[int, int, int] = (0, 255, 0),
+                          font: "ImageFont.FreeTypeFont | ImageFont.ImageFont", color: Tuple[int, int, int] = (0, 255, 0),
                           bg_color: Optional[Tuple[int, int, int]] = None) -> np.ndarray:
         """在图像上绘制中文文本
         

@@ -1,30 +1,21 @@
 # -*- coding: utf-8 -*-
 # @Author: BugNotFound
 # @Date: 2025-10-04
-# @FilePath: /DeltaForceScript/main_gui.py
+# @FilePath: /DeltaForceScript/src/deltaforcescript/script_thread.py
 # @Description: 带 PyQt6 GUI 的主程序
 
-import sys
 import re
 import time
 
-from .window_capture import WindowCapture
+from .capture import WindowCapture
 from .region_selector import RegionSelector
-from .gui_monitor import MonitorWindow
-from .input_control import click_point, click_region_center
-from .runtime_utils import extract_and_merge_digits, patch_numpy_asscalar
-from .system_utils import is_admin, run_as_admin
+from .input_helper import click_point, click_region_center, press_esc
+from .runtime_utils import extract_and_merge_digits
 
-from paddleocr import PaddleOCR
-from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QThread, pyqtSignal
-import pydirectinput
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_conversions import convert_color
-
-patch_numpy_asscalar()
-    
 
 class ScriptThread(QThread):
     """脚本运行线程"""
@@ -148,7 +139,7 @@ class ScriptThread(QThread):
                         
                         self.status_updated.emit("等待刷新...")
                         time.sleep(1.5)
-                        if self.verify_window(): pydirectinput.press('esc')
+                        if self.verify_window(): press_esc()
                         click_region_center(refresh_region)
                         # 检查三角币是否变化
                         now_money = self.ocr_region(money_region)
@@ -181,87 +172,3 @@ class ScriptThread(QThread):
     def stop(self):
         self.is_running = False
 
-
-def main():
-    """主函数"""
-    app = QApplication(sys.argv)
-    selector = RegionSelector()
-    selector.load_regions_from_file("regions_2k.json")
-    win_cap = WindowCapture(max_buffer_len=2)
-    
-    # 初始化 OCR
-    ocr = PaddleOCR(
-        use_doc_orientation_classify=False,
-        use_doc_unwarping=False,
-        use_textline_orientation=False,
-        text_detection_model_dir="models/PP-OCRv5_server_det_infer",
-        text_recognition_model_dir="models/PP-OCRv5_server_rec_infer",
-        # use_tensorrt=True,
-        device='gpu:0'
-    )
-    window = MonitorWindow()
-    window.show()
-    # 移动到屏幕右下角
-    screen = app.primaryScreen().geometry()
-    win_h = window.height()
-    x = screen.x() + 10
-    y = screen.y() + screen.height() - win_h - 30
-    window.move(x, y)
-    window.add_log("程序已启动")
-    window.add_log("点击 [开始] 按钮启动监控")
-    script_thread = None
-    
-    def on_start():
-        nonlocal script_thread
-        window.add_log("正在启动监控线程...")
-        
-        # 获取当前配置
-        config = window.get_config()
-        window.add_log(f"配置: 购买延迟={config['buy_click_delay']}秒")
-        
-        script_thread = ScriptThread(selector, win_cap, ocr, config)
-        
-        script_thread.status_updated.connect(lambda s: window.update_status(s))
-        script_thread.status_updated.connect(lambda s: window.add_log(s))
-        script_thread.timer_updated.connect(lambda m, s: window.update_timer(m, s))
-        script_thread.task_completed.connect(lambda: window.on_complete())
-        
-        script_thread.start()
-    
-    def on_pause():
-        if script_thread:
-            script_thread.pause()
-    
-    def on_resume():
-        if script_thread:
-            script_thread.resume()
-    
-    def on_stop():
-        if script_thread:
-            script_thread.stop()
-            script_thread.wait()
-    
-    window.controller.start_requested.connect(on_start)
-    window.controller.pause_requested.connect(on_pause)
-    window.controller.resume_requested.connect(on_resume)
-    window.controller.stop_requested.connect(on_stop)
-    
-    def cleanup():
-        if script_thread and script_thread.isRunning():
-            script_thread.stop()
-            script_thread.wait()
-        win_cap.stop()
-    
-    app.aboutToQuit.connect(cleanup)
-    
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    # 检查并请求管理员权限
-    if not is_admin():
-        print("检测到程序未以管理员权限运行")
-        run_as_admin()
-    else:
-        print("Delta Force 自动购买脚本 - PyQt6 GUI版本 (管理员模式)")
-        main()

@@ -486,9 +486,9 @@ class MonitorWindow(QMainWindow):
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.log_text.append(f"[{timestamp}] {message}")
         # 自动滚动到底部
-        self.log_text.verticalScrollBar().setValue(
-            self.log_text.verticalScrollBar().maximum()
-        )
+        scrollbar = self.log_text.verticalScrollBar()
+        if scrollbar is not None:
+            scrollbar.setValue(scrollbar.maximum())
     
     def on_start_clicked(self):
         """开始按钮点击"""

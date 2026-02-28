@@ -29,3 +29,11 @@ def click_region_center(region: tuple, clicks=1, interval=0.1):
     center_y += int((os.urandom(1)[0] / 255 - 0.5) * 10)
 
     click_point(center_x, center_y, clicks=clicks, interval=interval)
+
+
+def press_esc(interval=0.02):
+    """使用 win32api 发送 ESC 按键。"""
+    win32api.keybd_event(win32con.VK_ESCAPE, 0, 0, 0)
+    if interval and interval > 0:
+        time.sleep(interval)
+    win32api.keybd_event(win32con.VK_ESCAPE, 0, win32con.KEYEVENTF_KEYUP, 0)
