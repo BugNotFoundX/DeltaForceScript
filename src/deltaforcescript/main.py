@@ -2,36 +2,50 @@
 """Package entrypoint for the GUI app."""
 
 import sys
+from pathlib import Path
 
-from paddleocr import PaddleOCR
-from PyQt6.QtWidgets import QApplication
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    __package__ = "deltaforcescript"
 
-from .script_thread import ScriptThread
-from .gui_monitor import MonitorWindow
-from .region_selector import RegionSelector
 from .system_utils import is_admin, run_as_admin
-from .capture import WindowCapture
+from .paths import get_app_paths
 from .runtime_utils import patch_numpy_asscalar
 
-patch_numpy_asscalar()
 
-def main():
-    """主函数"""
-    app = QApplication(sys.argv)
-    selector = RegionSelector()
-    selector.load_regions_from_file("regions_2k.json")
-    win_cap = WindowCapture(max_buffer_len=2)
+def create_ocr(paths):
+    """Create the OCR engine with project-root-relative model paths."""
+    from paddleocr import PaddleOCR
 
-    # 初始化 OCR
-    ocr = PaddleOCR(
+    return PaddleOCR(
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
         use_textline_orientation=False,
-        text_detection_model_dir="models/PP-OCRv5_server_det_infer",
-        text_recognition_model_dir="models/PP-OCRv5_server_rec_infer",
+        text_detection_model_dir=str(paths.detection_model_dir),
+        text_recognition_model_dir=str(paths.recognition_model_dir),
         # use_tensorrt=True,
         device="gpu:0",
     )
+
+
+def main():
+    """主函数"""
+    patch_numpy_asscalar()
+
+    from PyQt6.QtWidgets import QApplication
+
+    from .capture import WindowCapture
+    from .gui_monitor import MonitorWindow
+    from .region_selector import RegionSelector
+    from .script_thread import ScriptThread
+
+    paths = get_app_paths()
+    app = QApplication(sys.argv)
+    selector = RegionSelector()
+    selector.load_regions_from_file(str(paths.regions_file))
+    win_cap = WindowCapture(max_buffer_len=2)
+
+    ocr = create_ocr(paths)
     window = MonitorWindow()
     window.show()
     # 移动到屏幕右下角
@@ -94,12 +108,12 @@ def main():
 
 def run():
     """Console script entrypoint."""
-    if not is_admin():
-        print("检测到程序未以管理员权限运行")
-        run_as_admin()
-    else:
-        print("Delta Force 抽选参与脚本 - PyQt6 GUI版本 (管理员模式)")
-        main()
+    # if not is_admin():
+    #     print("检测到程序未以管理员权限运行")
+    #     run_as_admin()
+    # else:
+    print("Delta Force 抽选参与脚本 - PyQt6 GUI版本 (管理员模式)")
+    main()
 
 
 if __name__ == "__main__":

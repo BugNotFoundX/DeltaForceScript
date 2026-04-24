@@ -5,9 +5,13 @@
 # @Description: 带 PyQt6 GUI 的主程序
 
 import time
+import warnings
 from enum import Enum
 
 from PyQt6.QtCore import QThread, pyqtSignal
+
+warnings.filterwarnings("ignore", category=SyntaxWarning, module=r"colormath\..*")
+
 from colormath.color_conversions import convert_color
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_objects import LabColor, sRGBColor

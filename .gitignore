@@ -3,3 +3,12 @@ __pycache__/
 regions_config.json
 logs/
 .codex
+.venv/
+.vscode/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+*.py[cod]

@@ -52,16 +52,29 @@ models/PP-OCRv5_server_rec_infer
 
 2. 确认区域配置文件存在。默认入口加载 `regions_2k.json`。
 
-3. 用管理员权限运行：
+3. 用包入口运行。推荐使用下面任一方式，不要切到 `src/deltaforcescript` 后手动运行内部文件：
 
 ```powershell
 uv run deltaforce-gui
 ```
 
-本地开发也可以运行：
+或：
+
+```powershell
+uv run python -m deltaforcescript
+```
+
+本地开发兼容入口：
 
 ```powershell
 uv run python scripts/run_gui.py
+```
+
+资源路径会自动从项目根目录解析。若需要从其它目录启动，可设置：
+
+```powershell
+$env:DELTAFORCESCRIPT_ROOT="D:\proj\DeltaForceScript"
+uv run deltaforce-gui
 ```
 
 4. 在游戏内手动筛选目标砖皮，保持当前目标处于可参与购买流程的位置。
