@@ -294,7 +294,7 @@ if __name__ == "__main__":
     # 示例：选择单个区域
     selector = RegionSelector()
 
-    regions = selector.select_multiple_regions(["time", "buy", "verify", "refresh", "money"])
+    regions = selector.select_multiple_regions(["time", "buy", "verify", "refresh", "money", "result_text"])
     print(f"所有区域: {regions}")
     # 保存配置
     selector.save_regions_to_file("regions_config.json")

@@ -2,3 +2,4 @@ models/
 __pycache__/
 regions_config.json
 logs/
+.codex

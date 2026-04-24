@@ -1,3 +1,18 @@
+Metadata-Version: 2.4
+Name: deltaforcescript
+Version: 0.1.0
+Summary: 三角洲抢枪皮脚本
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: colormath==3.0.0
+Requires-Dist: dxcam>=0.0.5
+Requires-Dist: numpy>=2.3.5
+Requires-Dist: paddleocr>=3.3.2
+Requires-Dist: paddlepaddle-gpu==3.3.0
+Requires-Dist: pillow>=12.0.0
+Requires-Dist: pyqt6>=6.10.1
+Requires-Dist: pywin32>=311
+
 # DeltaForceScript
 
 ## 项目简介

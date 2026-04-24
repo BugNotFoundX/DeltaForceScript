@@ -52,7 +52,7 @@ def main():
 
         # 获取当前配置
         config = window.get_config()
-        window.add_log(f"配置: 购买延迟={config['buy_click_delay']}秒")
+        window.add_log(f"配置: 参与延迟={config['buy_click_delay']}秒")
 
         script_thread = ScriptThread(selector, win_cap, ocr, config)
 
@@ -92,11 +92,16 @@ def main():
     sys.exit(app.exec())
 
 
-if __name__ == "__main__":
-    """Run the GUI app with admin check."""
+def run():
+    """Console script entrypoint."""
     if not is_admin():
         print("检测到程序未以管理员权限运行")
         run_as_admin()
     else:
-        print("Delta Force 自动购买脚本 - PyQt6 GUI版本 (管理员模式)")
+        print("Delta Force 抽选参与脚本 - PyQt6 GUI版本 (管理员模式)")
         main()
+
+
+if __name__ == "__main__":
+    """Run the GUI app with admin check."""
+    run()

@@ -1,0 +1,2 @@
+[console_scripts]
+deltaforce-gui = deltaforcescript.main:run

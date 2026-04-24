@@ -36,10 +36,10 @@ class MonitorWindow(QMainWindow):
         self.status = "就绪"
         
         # 配置变量
-        self.buy_click_delay = 0.50  # 购买点击延迟（秒）
-        self.buy_to_verify_delay = 0.0  # 购买到确认的延迟（秒）
-        self.buy_interval = 0.05  # 购买按钮点击间隔（秒）
-        self.verify_interval = 0.05  # 确认按钮点击间隔（秒）
+        self.buy_click_delay = 0.50  # 参与点击延迟（秒）
+        self.buy_to_verify_delay = 0.0  # 参与到确认的延迟（秒）
+        self.buy_interval = 0.05  # 参与按钮点击间隔（秒）
+        self.verify_interval = 0.05  # 确认参与按钮点击间隔（秒）
         self.ocr_interval = 0.95  # OCR识别间隔（time >= 5）（秒）
         self.continue_after_complete = True  # 任务完成后继续运行
         self.click_refresh_at_3s = True  # 3秒时点击刷新按钮
@@ -63,7 +63,7 @@ class MonitorWindow(QMainWindow):
         central_widget.setLayout(main_layout)
         
         # ========== 标题区域 ===========
-        title_label = QLabel("🎮 Delta Force 自动购买脚本")
+        title_label = QLabel("🎮 Delta Force 抽选参与脚本")
         title_font = QFont("微软雅黑", 16, QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -146,9 +146,9 @@ class MonitorWindow(QMainWindow):
         config_layout = QVBoxLayout()
         config_group.setLayout(config_layout)
         
-        # 购买点击延迟设置
+        # 参与点击延迟设置
         delay_layout = QHBoxLayout()
-        delay_label = QLabel("购买点击延迟:")
+        delay_label = QLabel("参与点击延迟:")
         delay_label.setFont(QFont("微软雅黑", 10))
         delay_label.setFixedWidth(120)
         self.delay_spin = QDoubleSpinBox()
@@ -164,9 +164,9 @@ class MonitorWindow(QMainWindow):
         delay_layout.addStretch()
         config_layout.addLayout(delay_layout)
         
-        #购买到确认延迟设置
+        # 参与到确认延迟设置
         buy_to_verify_layout = QHBoxLayout()
-        buy_to_verify_label = QLabel("确认点击延迟:")
+        buy_to_verify_label = QLabel("确认参与延迟:")
         buy_to_verify_label.setFont(QFont("微软雅黑", 10))
         buy_to_verify_label.setFixedWidth(120)
         self.buy_to_verify_spin = QDoubleSpinBox()
@@ -182,9 +182,9 @@ class MonitorWindow(QMainWindow):
         buy_to_verify_layout.addStretch()
         config_layout.addLayout(buy_to_verify_layout)
         
-        # 购买按钮点击间隔
+        # 参与按钮点击间隔
         buy_interval_layout = QHBoxLayout()
-        buy_interval_label = QLabel("购买点击间隔:")
+        buy_interval_label = QLabel("参与重试间隔:")
         buy_interval_label.setFont(QFont("微软雅黑", 10))
         buy_interval_label.setFixedWidth(120)
         self.buy_interval_spin = QDoubleSpinBox()
@@ -200,9 +200,9 @@ class MonitorWindow(QMainWindow):
         buy_interval_layout.addStretch()
         config_layout.addLayout(buy_interval_layout)
         
-        # 确认按钮点击间隔
+        # 确认参与按钮点击间隔
         verify_interval_layout = QHBoxLayout()
-        verify_interval_label = QLabel("确认点击间隔:")
+        verify_interval_label = QLabel("确认参与间隔:")
         verify_interval_label.setFont(QFont("微软雅黑", 10))
         verify_interval_label.setFixedWidth(120)
         self.verify_interval_spin = QDoubleSpinBox()
@@ -428,24 +428,24 @@ class MonitorWindow(QMainWindow):
         self.confidence = confidence
     
     def on_delay_changed(self, value):
-        """购买点击延迟变更"""
+        """参与点击延迟变更"""
         self.buy_click_delay = value
-        self.add_log(f"⚙️ 购买点击延迟已设置为: {value}秒")
+        self.add_log(f"⚙️ 参与点击延迟已设置为: {value}秒")
     
     def on_buy_to_verify_delay_changed(self, value):
-        """购买到确认延迟变更"""
+        """参与到确认延迟变更"""
         self.buy_to_verify_delay = value
-        self.add_log(f"⚙️ 购买确认间延迟已设置为: {value}秒")
+        self.add_log(f"⚙️ 确认参与延迟已设置为: {value}秒")
     
     def on_buy_interval_changed(self, value):
-        """购买点击间隔变更"""
+        """参与重试间隔变更"""
         self.buy_interval = value
-        self.add_log(f"⚙️ 购买点击间隔已设置为: {value}秒")
+        self.add_log(f"⚙️ 参与重试间隔已设置为: {value}秒")
     
     def on_verify_interval_changed(self, value):
-        """确认点击间隔变更"""
+        """确认参与间隔变更"""
         self.verify_interval = value
-        self.add_log(f"⚙️ 确认点击间隔已设置为: {value}秒")
+        self.add_log(f"⚙️ 确认参与间隔已设置为: {value}秒")
     
     def on_ocr_interval_changed(self, value):
         """OCR识别间隔变更"""

@@ -19,10 +19,20 @@ dependencies = [
     "pywin32>=311",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
 [tool.uv]
 environments = [
     "sys_platform == 'win32'",  # 只为 Windows 解析依赖
 ]
+
+[[tool.uv.index]]
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
 
 [[tool.uv.index]]
 name = "paddle-cu126"
